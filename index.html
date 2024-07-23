@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Interface</title>
+    <style>
+        /* Reset margins and padding */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e8f1f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #chat-container {
+            width: 90%;
+            max-width: 600px;
+            height: 80vh;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #chat-header {
+            padding: 15px;
+            background-color: #439ea0;
+            color: #ffffff;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        #chat-box {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .bot-message, .user-message {
+            border-radius: 10px;
+            padding: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+            margin-bottom: 10px;
+        }
+
+        .bot-message {
+            background-color: #a5d6a7;
+            align-self: flex-start;
+        }
+
+        .user-message {
+            background-color: #c8e6c9;
+            align-self: flex-end;
+        }
+
+        button {
+            background-color: #43a047;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #388e3c;
+        }
+
+        #subtopic-info {
+            display: none;
+            border-top: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f1f8e9;
+            border-radius: 5px;
+        }
+
+        #subtopic-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #388e3c;
+            margin-bottom: 10px;
+        }
+
+        #subtopic-details {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            #chat-container {
+                width: 95%;
+                height: 90vh;
+            }
+
+            #chat-header {
+                font-size: 16px;
+            }
+
+            .bot-message, .user-message {
+                max-width: 90%;
+            }
+
+            button {
+                font-size: 14px;
+            }
+
+            #subtopic-title {
+                font-size: 16px;
+            }
+
+            #subtopic-details {
+                font-size: 14px;
+            }
+        }
+
+        /* Arrow Button */
+        #arrow-button {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: #f1c40f;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+        }
+
+        #arrow-button:hover {
+            background-color: #f39c12;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">
+            <h1>EcoTrackBot</h1>
+        </div>
+        <div id="chat-box">
+            <div id="chat-content">
+                <div id="welcome-message" class="bot-message">
+                    <p>Welcome to EcoTrackBot! How can I assist you today?</p>
+                </div>
+                <div id="main-topic-section" class="user-message">
+                    <p>Select a Main Topic:</p>
+                    <div id="main-topic-buttons"></div>
+                </div>
+                <div id="subtopic-section" class="user-message" style="display:none;">
+                    <p>Select a Subtopic:</p>
+                    <div id="subtopic-buttons"></div>
+                </div>
+                <div id="subtopic-info" class="bot-message">
+                    <p id="subtopic-title"></p>
+                    <p id="subtopic-details"></p>
+                </div>
+                <div id="more-queries" class="user-message" style="display:none;">
+                    <button onclick="goBackToMain()">Back to Main Topics</button>
+                    <button onclick="restartChat()">Restart</button>
+                </div>
+            </div>
+        </div>
+        <button id="arrow-button" onclick="toggleSubtopicInfo()">→</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchMainTopics();
+        });
+
+        function fetchMainTopics() {
+            fetch('/get_main_topics')
+                .then(response => response.json())
+                .then(data => {
+                    const mainTopicButtons = document.getElementById('main-topic-buttons');
+                    for (const [key, value] of Object.entries(data)) {
+                        const button = document.createElement('button');
+                        button.textContent = value;
+                        button.onclick = () => fetchSubtopics(key);
+                        mainTopicButtons.appendChild(button);
+                    }
+                });
+        }
+
+        function fetchSubtopics(mainTopicId) {
+            fetch(`/get_subtopics/${mainTopicId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const subtopicSection = document.getElementById('subtopic-section');
+                    const subtopicButtons = document.getElementById('subtopic-buttons');
+                    subtopicButtons.innerHTML = '';
+
+                    for (const [key, value] of Object.entries(data)) {
+                        const button = document.createElement('button');
+                        button.textContent = value[0];
+                        button.onclick = () => fetchSubtopicInfo(mainTopicId, key);
+                        subtopicButtons.appendChild(button);
+                    }
+
+                    subtopicSection.style.display = 'block';
+                    document.getElementById('main-topic-section').style.display = 'none';
+                });
+        }
+
+        function fetchSubtopicInfo(mainTopicId, subtopicId) {
+            fetch(`/get_subtopic_info/${mainTopicId}/${subtopicId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('subtopic-title').textContent = data.title;
+                    document.getElementById('subtopic-details').textContent = data.info;
+                    document.getElementById('subtopic-info').style.display = 'block';
+                    document.getElementById('more-queries').style.display = 'block';
+                    document.getElementById('subtopic-section').style.display = 'none';
+                });
+        }
+
+        function goBackToMain() {
+            document.getElementById('main-topic-section').style.display = 'block';
+            document.getElementById('subtopic-section').style.display = 'none';
+            document.getElementById('subtopic-info').style.display = 'none';
+            document.getElementById('more-queries').style.display = 'none';
+        }
+
+        function restartChat() {
+            document.getElementById('main-topic-section').style.display = 'block';
+            document.getElementById('subtopic-section').style.display = 'none';
+            document.getElementById('subtopic-info').style.display = 'none';
+            document.getElementById('more-queries').style.display = 'none';
+        }
+
+        function toggleSubtopicInfo() {
+            const subtopicInfo = document.getElementById('subtopic-info');
+            const arrowButton = document.getElementById('arrow-button');
+            if (subtopicInfo.style.display === 'block') {
+                subtopicInfo.style.display = 'none';
+                arrowButton.style.backgroundColor = '#f1c40f'; // Original color
+            } else {
+                subtopicInfo.style.display = 'block';
+                arrowButton.style.backgroundColor = '#e67e22'; // New color when active
+            }
+        }
+    </script>
+</body>
+</html>
