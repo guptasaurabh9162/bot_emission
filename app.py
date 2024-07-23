@@ -100,4 +100,4 @@ def get_subtopic_info(main_topic_id, subtopic_id):
     return jsonify({'title': subtopic_info[0], 'info': subtopic_info[1]})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False,host=0.0.0.0)
